@@ -61,3 +61,15 @@ lines <- readLines(con)
 matches <- lapply(lines, function(line){grepl('A computer once beat me at chess, but it was no match for me at kickboxing', line, ignore.case=FALSE)})
 close(con)
 result <- lines[unlist(matches)]; result; length(result)
+
+
+
+# too slow, not recommended
+lines <- readRDS("D:/R/capstone/data/tidy_twitter_en.rds")
+l <- lapply(lines[1:10], function(line){removeWords(line, stopwords("en"))})
+
+df <- readRDS("D:/R/capstone/data/1gram_twitter_en.rds")
+library(tm)
+idx <- lapply(stopwords("en"), function(stopword){return(which(df$word == stopword))})
+idx <- unlist(idx)
+df <- df[-idx,]

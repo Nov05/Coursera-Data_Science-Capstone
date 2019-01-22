@@ -1,0 +1,313 @@
+---
+title: "Capstone Week 2"
+author: "Wenjing Liu"
+date: "January 20, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br><br><br>
+
+## Introduction
+
+The first step in building a predictive model for text is understanding the distribution and relationship between the words, tokens, and phrases in the text. The goal of this task is to understand the basic relationships you observe in the data and prepare to build your first linguistic models.
+
+*Tasks to accomplish*
+
+* Exploratory analysis - perform a thorough exploratory analysis of the data, understanding the distribution of words and relationship between the words in the corpora.
+
+* Understand frequencies of words and word pairs - build figures and tables to understand variation in the frequencies of words and word pairs in the data.
+
+*Questions to consider*
+
+* Some words are more frequent than others - what are the distributions of word frequencies?
+
+* What are the frequencies of 2-grams and 3-grams in the dataset?
+
+* How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
+
+* How do you evaluate how many of the words come from foreign languages?
+
+* Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
+
+## Exploratory Data Analysis
+
+```{r warning=FALSE, message=FALSE}
+library(stringr)
+library(tm)
+library(ggplot2)
+library(ngram)
+
+# constants
+co_text_attr_en = "D:/R/capstone/data/text_attr_en.rds"
+co_tidy_twitter_en = "D:/R/capstone/data/tidy_twitter_en.rds"
+co_1gram_twitter_en = "D:/R/capstone/data/1gram_twitter_en.rds"
+co_2gram_twitter_en = "D:/R/capstone/data/2gram_twitter_en.rds"
+co_3gram_twitter_en = "D:/R/capstone/data/3gram_twitter_en.rds"
+co_nostop_twitter_en = "D:/R/capstone/data/nostop_twitter_en.rds"
+```
+
+### Data attributes
+
+Refer to this report. https://rpubs.com/Nov05/450458
+
+```{r eval=FALSE}
+folder <- "D:/R/data/capstone/en_US/"
+filelist <- list.files(path=folder)
+
+l <- lapply(paste0(folder, filelist), function(filepath) {
+  size <- file.info(filepath)[1]/1024/1000
+  con <- file(filepath, open="r")
+  lines <- readLines(con)
+  nchars <- lapply(lines, nchar)
+  maxchars <- max(unlist(nchars))
+  nwords <- sum(sapply(strsplit(lines, "\\s+"), length))
+  close(con)
+  return(c(filepath, format(round(size, 2), nsmall=2), length(lines), maxchars, nwords))
+})
+
+df <- data.frame(matrix(unlist(l), nrow=3, byrow=TRUE))
+names(df) <- c('File Name', 'Size(MB)', 'Entries', 'Longest Line', 'Total Words')
+saveRDS(df, co_text_attr_en)
+```
+
+```{r}
+df <- readRDS(co_text_attr_en); df
+```
+
+
+### Data Cleanse (English Twitter texts)
+
+1. Convert all letters to lower case to simplify the problem;
+2. Split lines at ".", "," and etc.;
+3. Remove non-alphanumeric characters at the beginning or at the end of a word, retain special characters in words like "i'am", "we've", etc;
+4. Remove extra spaces;
+5. Split words by space.
+
+```{r eval=FALSE}
+# read file
+filepath <- "D:/R/data/capstone/en_US/en_US.twitter.txt"
+con <- file(filepath) 
+lines <- readLines(con, skipNul=TRUE) # 2360148 lines
+close(con)
+
+lines <- tolower(lines)
+# split at all ".", "," and etc.
+lines <- unlist(strsplit(lines, "[.,:;!?(){}<>]+")) # 5398319 lines
+
+# replace all non-alphanumeric characters with a space at the beginning/end of a word.
+lines <- gsub("^[^a-z0-9]+|[^a-z0-9]+$", " ", lines) # at the begining/end of a line
+lines <- gsub("[^a-z0-9]+\\s", " ", lines) # before space
+lines <- gsub("\\s[^a-z0-9]+", " ", lines) # after space
+lines <- gsub("\\s+", " ", lines) # remove mutiple spaces
+lines <- str_trim(lines) # remove spaces at the beginning/end of the line
+saveRDS(lines, file=co_tidy_twitter_en)
+```
+
+```{r warning=FALSE}
+lines <- readRDS(file=co_tidy_twitter_en)
+head(lines, 20)
+```
+
+### Count word frequence (1-gram)
+
+```{r eval=FALSE}
+# split words by space
+words <- unlist(strsplit(lines, "\\s+"))
+
+# count word frequence
+word.freq <- table(words)
+
+# convert to data frame
+df <- cbind.data.frame(names(word.freq), as.integer(word.freq))
+names(df) <- c('word', 'freq')
+row.names(df) <- df[,1]
+
+# sort words by frequence descending
+df <- df[order(-df$freq),]
+
+# save as RDS file
+saveRDS(df, file=co_1gram_twitter_en)
+```
+
+```{r}
+# read word frequence data
+df <- readRDS(file=co_1gram_twitter_en)
+# locate "i'm" 
+df["i'm",]
+```
+
+### Plotting
+
+```{r}
+ggplot(df[1:20,], aes(x=reorder(word,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Twitter Top 20 Word Frequence (with Stop Words)", x=NULL, y="Word Frequency")
+```
+
+```{r warning=FALSE}
+plot(df[1:500,]$freq,
+     main='Twitter Top 500 Word Frequence',
+     ylab="Frequence",
+     xlab="Word")
+```
+
+```{r}
+ggplot(data=df[1:250,], aes(x=df[1:250,]$freq)) + 
+  geom_histogram(colour="black", fill="white", breaks=seq(0, 900000,by=3000)) + 
+  labs(title="Histogram of Twitter Top 250 Word Frequence", x="Word Frequency", y="Count")
+```
+
+Often there are words that are frequent but provide little information. These are called stop words, and we want to remove them from your analysis. Some common English stop words include "I", "she'll", "the", etc. In the tm package, there are 174 common English stop words. The following method to remove the stop words is not recommended because it is to slow.
+
+```{r eval=FALSE}
+# NOT recommended!
+lines <- lapply(lines, function(line){removeWords(line, stopwords("en"))})
+```
+
+Instead, stop words are removed from the frequence data frame directly.
+
+```{r eval=FALSE}
+df <- readRDS(file=co_1gram_twitter_en)
+idx <- lapply(stopwords("en"), function(stopword){return(which(df$word == stopword))})
+idx <- unlist(idx)
+df <- df[-idx,]
+saveRDS(df, co_nostop_twitter_en)
+```
+
+```{r warning=FALSE}
+df <- readRDS(co_nostop_twitter_en)
+ggplot(df[1:20,], aes(x=reorder(word,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Twitter Top 20 Word Frequence (without Stop Words)", x=NULL, y="Word Frequency")
+```
+
+```{r warning=FALSE, message=FALSE, fig.height=8}
+library("RColorBrewer")
+library("wordcloud")
+# generate word cloud
+set.seed(1234)
+wordcloud(words = df$word, freq = df$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+### 2-grams
+
+For example, generate 2-grams from sentence "how are you". Refer to document: https://cran.r-project.org/web/packages/ngram/vignettes/ngram-guide.pdf
+
+```{r}
+lines[1]
+print(ngram(lines[1], n=2), output="full")
+```
+
+Now generate 2-grams from the whole Twitter text.
+
+```{r eval=FALSE}
+# remove lines that contain less than 2 words, or ngram() would throw errors.
+lines <- lines[str_count(lines, "\\s+")>0] # 4375507 lines
+bigram <- ngram(lines, n=2) # this line takes long time. probably should sample the text first.
+df <- get.phrasetable(bigram)
+saveRDS(df, co_2gram_twitter_en)
+```
+
+```{r message=FALSE, warning=FALSE}
+df <- readRDS(co_2gram_twitter_en)
+ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Twitter Top 20 2-Gram Frequence (with Stop Words)", x=NULL, y="Word Frequency")
+```
+
+### 3-grams
+
+Generate 3-grams for the whole Twitter text.
+
+```{r eval=FALSE}
+# remove lines that contain less than 3 words, or ngram() would throw errors.
+lines <- lines[str_count(lines, "\\s+")>1] # 3803575 lines
+trigram <- ngram(lines, n=3) # this doesn't take long time surprisingly.
+df <- get.phrasetable(trigram)
+saveRDS(df, co_3gram_twitter_en)
+```
+
+```{r message=FALSE, warning=FALSE}
+df <- readRDS(co_3gram_twitter_en)
+ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Twitter Top 20 3-Gram Frequence (with Stop Words)", x=NULL, y="Word Frequency")
+```
+
+```{r eval=FALSE}
+# remove lines that contain less than 3 words, or ngram() would throw errors.
+lines <- lines[str_count(lines, "\\s+")>1] # 3803575 lines
+trigram <- ngram(lines, n=3) # this doesn't take long time surprisingly.
+df <- get.phrasetable(trigram)
+saveRDS(df, co_3gram_twitter_en)
+```
+
+```{r message=FALSE, warning=FALSE}
+df <- readRDS(co_3gram_twitter_en)
+ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Twitter Top 20 3-Gram Frequence (with Stop Words)", x=NULL, y="Word Frequency")
+```
+
+### Unique words needed to cover the text
+
+```{r message=FALSE, warning=FALSE}
+df <- readRDS(co_1gram_twitter_en) # with stop words
+df$count <- 1
+df$count <- cumsum(df$count)
+df$coverage <- cumsum(df$freq) / sum(df$freq) * 100
+df <- df[df$coverage <= 91,]
+
+# find the word counts for 50% and 90% coverage 
+points <- rbind(tail(df[df$coverage <= 50,], 1), tail(df[df$coverage <= 90,], 1))
+
+ggplot(data=df, aes(x=count, y=coverage, group=1)) +
+  geom_line()+
+  geom_point(data=points, colour="red", size=3) +
+  geom_text(data=points, aes(label=count), hjust=-1, vjust=1) +
+  ggtitle("Number of Words to Cover Twitter Text (with Stop Words)") +
+  xlab("Number of Words") +
+  ylab("Coverage Percentage")
+```
+
+Removal of the stop words would increase the number of words needed to cover the whole text.To decrease the number, lemmatization and/or stemming could be used. https://www.analyticsvidhya.com/blog/2018/02/the-different-methods-deal-text-data-predictive-python/
+
+### For other two English files
+
+```{r eval=FALSE}
+df_news <- readRDS("D:/R/capstone/data/1gram_news_en.rds")
+df_blogs <- readRDS("D:/R/capstone/data/1gram_blogs_en.rds")
+
+par(mfrow=c(1,2))
+
+df <- readRDS(co_nostop_twitter_en)
+ggplot(df_news[1:20,], aes(x=reorder(word,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="News Top 20 Word Frequence (without Stop Words)", x=NULL, y="Word Frequency")
+
+df <- readRDS(co_nostop_twitter_en)
+ggplot(df_blogs[1:20,], aes(x=reorder(word,freq), freq)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(title="Blogs Top 20 Word Frequence (without Stop Words)", x=NULL, y="Word Frequency")
+```
+
