@@ -8,6 +8,8 @@
 
 ### Week 2
 
+* Assignment - http://rpubs.com/Nov05/459931
+
 * Task 2 Exloratory Data Analysis - https://www.coursera.org/learn/data-science-project/supplement/BePVz/task-2-exploratory-data-analysis
 
 * Task 3 Modeling - https://www.coursera.org/learn/data-science-project/supplement/2IiM9/task-3-modeling
