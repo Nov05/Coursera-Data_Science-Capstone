@@ -2,18 +2,39 @@
 
 ### Week 1
 
-* Quiz - http://rpubs.com/Nov05/450458
-
 * Course - https://www.coursera.org/learn/data-science-project/home/week/1
+
+* Task 0 Understanding the Problem - https://www.coursera.org/learn/data-science-project/supplement/Iimbd/task-0-understanding-the-problem
+
+* Task 1 Getting and Cleaning the Data - https://www.coursera.org/learn/data-science-project/supplement/IbTUL/task-1-getting-and-cleaning-the-data
+
+* Quiz 1 Getting Started - http://rpubs.com/Nov05/450458
 
 ### Week 2
 
-* Assignment - http://rpubs.com/Nov05/459931
+* Course - https://www.coursera.org/learn/data-science-project/home/week/2
 
 * Task 2 Exloratory Data Analysis - https://www.coursera.org/learn/data-science-project/supplement/BePVz/task-2-exploratory-data-analysis
 
 * Task 3 Modeling - https://www.coursera.org/learn/data-science-project/supplement/2IiM9/task-3-modeling
 
-* Course - https://www.coursera.org/learn/data-science-project/home/week/2
+* Assignment - http://rpubs.com/Nov05/459931
+
+### Week 3
+
+* Course - https://www.coursera.org/learn/data-science-project/home/week/3
+
+* Task 4 Prediction Model - https://www.coursera.org/learn/data-science-project/supplement/SKIQt/task-4-prediction-model
+
+* Quiz 2 Natural language processing I - https://rpubs.com/Nov05/460790
+
+### Week 4
+
+* Course - https://www.coursera.org/learn/data-science-project/home/week/4
+
+* Task 5 Creative Exploration - https://www.coursera.org/learn/data-science-project/supplement/f9bdM/task-5-creative-exploration
+
+* Quiz 3 Natural language processing II - 
+
 
 
