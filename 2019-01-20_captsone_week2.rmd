@@ -35,6 +35,8 @@ The first step in building a predictive model for text is understanding the dist
 
 ## Exploratory Data Analysis
 
+Note: It should be easier to use Package "tm" etc. to do text mining. However I decided to do it mainly with my own code for practice purposes. Also there are news, blogs and Twitter texts, I only tested processing Twitter texts to see where the performance limitations would be. For actual models, I would use as much texts as I could.
+
 ```{r warning=FALSE, message=FALSE}
 library(stringr)
 library(tm)
@@ -44,10 +46,13 @@ library(ngram)
 # constants
 co_text_attr_en = "D:/R/capstone/data/text_attr_en.rds"
 co_tidy_twitter_en = "D:/R/capstone/data/tidy_twitter_en.rds"
+co_tidy_nostop_twitter_en = "D:/R/capstone/data/tidy_nostop_twitter_en.rds"
 co_1gram_twitter_en = "D:/R/capstone/data/1gram_twitter_en.rds"
 co_2gram_twitter_en = "D:/R/capstone/data/2gram_twitter_en.rds"
 co_3gram_twitter_en = "D:/R/capstone/data/3gram_twitter_en.rds"
-co_nostop_twitter_en = "D:/R/capstone/data/nostop_twitter_en.rds"
+co_1gram_nostop_twitter_en = "D:/R/capstone/data/1gram_nostop_twitter_en.rds"
+co_2gram_nostop_twitter_en = "D:/R/capstone/data/2gram_nostop_twitter_en.rds"
+co_3gram_nostop_twitter_en = "D:/R/capstone/data/3gram_nostop_twitter_en.rds"
 ```
 
 ### Data attributes
@@ -78,7 +83,6 @@ saveRDS(df, co_text_attr_en)
 df <- readRDS(co_text_attr_en); df
 ```
 
-
 ### Data Cleanse (English Twitter texts)
 
 1. Convert all letters to lower case to simplify the problem;
@@ -107,9 +111,22 @@ lines <- str_trim(lines) # remove spaces at the beginning/end of the line
 saveRDS(lines, file=co_tidy_twitter_en)
 ```
 
+Check how the texts look like now.
+
 ```{r warning=FALSE}
 lines <- readRDS(file=co_tidy_twitter_en)
 head(lines, 20)
+```
+
+Remove the stop words.
+
+```{r eval=FALSE}
+# remove stop words (There are 5398319 lines, size 356.3 Mb. With 16 Gb memory it took about 3 hours. According to this post https://stackoverflow.com/questions/50635341/removing-stop-words-from-corpus-in-r-is-too-slow , it took 2 hours to process 31 MB data by using package "tm".)
+lines <- unlist(lapply(lines, function(line){removeWords(line, stopwords("en"))}))
+lines <- str_trim(lines) # remove spaces at the beginning/end of the line
+lines <- gsub("\\s+", " ", lines) # remove mutiple spaces
+lines <- lines[nchar(lines)>0] # remove blank lines. reduce the elements from 5398319 to 5059787
+saveRDS(lines, file=co_tidy_nostop_twitter_en)
 ```
 
 ### Count word frequence (1-gram)
@@ -132,6 +149,8 @@ df <- df[order(-df$freq),]
 # save as RDS file
 saveRDS(df, file=co_1gram_twitter_en)
 ```
+
+Locate a word in the list.
 
 ```{r}
 # read word frequence data
@@ -163,7 +182,7 @@ ggplot(data=df[1:250,], aes(x=df[1:250,]$freq)) +
   labs(title="Histogram of Twitter Top 250 Word Frequence", x="Word Frequency", y="Count")
 ```
 
-Often there are words that are frequent but provide little information. These are called stop words, and we want to remove them from your analysis. Some common English stop words include "I", "she'll", "the", etc. In the tm package, there are 174 common English stop words. The following method to remove the stop words is not recommended because it is to slow.
+Often there are words that are frequent but provide little information. These are called stop words, and we want to remove them from your analysis. Some common English stop words include "I", "she'll", "the", etc. In the tm package, there are 174 common English stop words. The following method to remove the stop words is not recommended in this case because it takes long time.
 
 ```{r eval=FALSE}
 # NOT recommended!
@@ -174,14 +193,13 @@ Instead, stop words are removed from the frequence data frame directly.
 
 ```{r eval=FALSE}
 df <- readRDS(file=co_1gram_twitter_en)
-idx <- lapply(stopwords("en"), function(stopword){return(which(df$word == stopword))})
-idx <- unlist(idx)
+idx <- unlist(lapply(stopwords("en"), function(stopword){return(which(df$word == stopword))}))
 df <- df[-idx,]
-saveRDS(df, co_nostop_twitter_en)
+saveRDS(df, co_1gram_nostop_twitter_en)
 ```
 
 ```{r warning=FALSE}
-df <- readRDS(co_nostop_twitter_en)
+df <- readRDS(co_1gram_nostop_twitter_en)
 ggplot(df[1:20,], aes(x=reorder(word,freq), freq)) +
   geom_col() +
   xlab(NULL) +
@@ -232,6 +250,7 @@ ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
 Generate 3-grams for the whole Twitter text.
 
 ```{r eval=FALSE}
+lines <- readRDS(co_tidy_twitter_en)
 # remove lines that contain less than 3 words, or ngram() would throw errors.
 lines <- lines[str_count(lines, "\\s+")>1] # 3803575 lines
 trigram <- ngram(lines, n=3) # this doesn't take long time surprisingly.
@@ -249,20 +268,21 @@ ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
 ```
 
 ```{r eval=FALSE}
+lines <- readRDS((co_tidy_nostop_twitter_en))
 # remove lines that contain less than 3 words, or ngram() would throw errors.
-lines <- lines[str_count(lines, "\\s+")>1] # 3803575 lines
-trigram <- ngram(lines, n=3) # this doesn't take long time surprisingly.
+lines <- lines[str_count(lines, "\\s+")>1] # 2780871 lines left
+trigram <- ngram(lines, n=3) # this took less than a minute surprisingly.
 df <- get.phrasetable(trigram)
-saveRDS(df, co_3gram_twitter_en)
+saveRDS(df, co_3gram_nostop_twitter_en)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-df <- readRDS(co_3gram_twitter_en)
+df <- readRDS(co_3gram_nostop_twitter_en)
 ggplot(df[1:20,], aes(x=reorder(ngrams,freq), freq)) +
   geom_col() +
   xlab(NULL) +
   coord_flip() +
-  labs(title="Twitter Top 20 3-Gram Frequence (with Stop Words)", x=NULL, y="Word Frequency")
+  labs(title="Twitter Top 20 3-Gram Frequence (without Stop Words)", x=NULL, y="Word Frequency")
 ```
 
 ### Unique words needed to cover the text
@@ -290,20 +310,22 @@ Removal of the stop words would increase the number of words needed to cover the
 
 ### For other two English files
 
+Do the same to see whether there are differences.
+
 ```{r eval=FALSE}
-df_news <- readRDS("D:/R/capstone/data/1gram_news_en.rds")
-df_blogs <- readRDS("D:/R/capstone/data/1gram_blogs_en.rds")
+df_news <- readRDS("D:/R/capstone/data/1gram_nostop_news_en.rds")
+df_blogs <- readRDS("D:/R/capstone/data/1gram_nostop_blogs_en.rds")
 
 par(mfrow=c(1,2))
 
-df <- readRDS(co_nostop_twitter_en)
+df <- readRDS(co_1gram_nostop_news_en)
 ggplot(df_news[1:20,], aes(x=reorder(word,freq), freq)) +
   geom_col() +
   xlab(NULL) +
   coord_flip() +
   labs(title="News Top 20 Word Frequence (without Stop Words)", x=NULL, y="Word Frequency")
 
-df <- readRDS(co_nostop_twitter_en)
+df <- readRDS(co_1gram_nostop_blogs_en)
 ggplot(df_blogs[1:20,], aes(x=reorder(word,freq), freq)) +
   geom_col() +
   xlab(NULL) +
