@@ -9,3 +9,82 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+<br><br><br>
+
+## Quiz 3: Natural language processing II
+
+Data Science Capstone: https://www.coursera.org/learn/data-science-project/  
+Quiz: https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i
+
+For each of the sentence fragments below use your natural language processing algorithm to predict the next word in the sentence.
+
+### 1. When you breathe, I want to be the air for you. I'll be there for you, I'd live and I'd
+
+give  
+sleep  
+eat  
+die
+
+### 2. Guy at my table's wife got up to go to the bathroom and I asked about dessert and he started telling me about his
+
+horticultural  
+spiritual  
+marital  
+financial  
+
+### 3. I'd give anything to see arctic monkeys this
+
+weekend  
+month  
+decade  
+morning  
+
+### 4. Talking to your mom has the same effect as a hug and helps reduce your
+
+hunger  
+stress  
+happiness  
+sleepiness  
+
+### 5. When you were in Holland you were like 1 inch away from me but you hadn't time to take a
+
+look  
+picture  
+walk  
+minute  
+
+### 6. I'd just like all of these questions answered, a presentation of evidence, and a jury to settle the
+
+incident  
+account  
+matter  
+case
+
+### 7. I can't deal with unsymetrical things. I can't even hold an uneven number of bags of groceries in each
+
+finger  
+arm  
+toe  
+hand  
+
+### 8. Every inch of you is perfect from the bottom to the
+
+side  
+center  
+top  
+middle  
+
+### 9. I’m thankful my childhood was filled with imagination and bruises from playing
+
+inside  
+daily  
+weekly  
+outside  
+
+### 10. I like how the same people are in almost all of Adam Sandler's
+
+stories  
+movies  
+pictures  
+novels  
+

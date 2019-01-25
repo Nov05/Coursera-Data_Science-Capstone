@@ -44,15 +44,15 @@ library(ggplot2)
 library(ngram)
 
 # constants
-co_text_attr_en = "D:/R/capstone/data/text_attr_en.rds"
-co_tidy_twitter_en = "D:/R/capstone/data/tidy_twitter_en.rds"
-co_tidy_nostop_twitter_en = "D:/R/capstone/data/tidy_nostop_twitter_en.rds"
-co_1gram_twitter_en = "D:/R/capstone/data/1gram_twitter_en.rds"
-co_2gram_twitter_en = "D:/R/capstone/data/2gram_twitter_en.rds"
-co_3gram_twitter_en = "D:/R/capstone/data/3gram_twitter_en.rds"
-co_1gram_nostop_twitter_en = "D:/R/capstone/data/1gram_nostop_twitter_en.rds"
-co_2gram_nostop_twitter_en = "D:/R/capstone/data/2gram_nostop_twitter_en.rds"
-co_3gram_nostop_twitter_en = "D:/R/capstone/data/3gram_nostop_twitter_en.rds"
+co_text_attr_en = "D:/R/data/capstone/text_attr_en.rds"
+co_tidy_twitter_en = "D:/R/data/capstone/tidy_twitter_en.rds"
+co_tidy_nostop_twitter_en = "D:/R/data/capstone/tidy_nostop_twitter_en.rds"
+co_1gram_twitter_en = "D:/R/data/capstone/1gram_twitter_en.rds"
+co_2gram_twitter_en = "D:/R/data/capstone/2gram_twitter_en.rds"
+co_3gram_twitter_en = "D:/R/data/capstone/3gram_twitter_en.rds"
+co_1gram_nostop_twitter_en = "D:/R/data/capstone/1gram_nostop_twitter_en.rds"
+co_2gram_nostop_twitter_en = "D:/R/data/capstone/2gram_nostop_twitter_en.rds"
+co_3gram_nostop_twitter_en = "D:/R/data/capstone/3gram_nostop_twitter_en.rds"
 ```
 
 ### Data attributes
@@ -67,10 +67,12 @@ l <- lapply(paste0(folder, filelist), function(filepath) {
   size <- file.info(filepath)[1]/1024/1000
   con <- file(filepath, open="r")
   lines <- readLines(con)
+  close(con)
+  
   nchars <- lapply(lines, nchar)
   maxchars <- max(unlist(nchars))
   nwords <- sum(sapply(strsplit(lines, "\\s+"), length))
-  close(con)
+  
   return(c(filepath, format(round(size, 2), nsmall=2), length(lines), maxchars, nwords))
 })
 
