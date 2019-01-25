@@ -26,7 +26,9 @@
 
 * Task 4 Prediction Model - https://www.coursera.org/learn/data-science-project/supplement/SKIQt/task-4-prediction-model
 
-* Quiz 2 Natural language processing I - https://rpubs.com/Nov05/460790
+* Quiz 2 Natural language processing I  
+  Version 1 - https://rpubs.com/Nov05/460790  
+  Version 2 - https://rpubs.com/Nov05/461099
 
 ### Week 4
 
