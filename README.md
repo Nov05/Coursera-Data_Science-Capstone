@@ -36,7 +36,27 @@
 
 * Task 5 Creative Exploration - https://www.coursera.org/learn/data-science-project/supplement/f9bdM/task-5-creative-exploration
 
-* Quiz 3 Natural language processing II - 
+* Quiz 3 Natural language processing II - https://rpubs.com/Nov05/460803
+
+### Week 5
+
+* Course - https://www.coursera.org/learn/data-science-project/home/week/5
+
+* Task 6 Data Product - https://www.coursera.org/learn/data-science-project/supplement/aXVfV/task-6-data-product
+
+### Week 6
+
+* Course - https://www.coursera.org/learn/data-science-project/home/week/6
+
+* Task 7 Slide Deck - https://www.coursera.org/learn/data-science-project/supplement/k1jfb/task-7-slide-deck
+
+### Week 7
+
+* Course - https://www.coursera.org/learn/data-science-project/home/week/7
+
+* Peer-graded Assignment: Final Project - https://www.coursera.org/learn/data-science-project/peer/EI1l4/final-project-submission
+
+-end-
 
 
 

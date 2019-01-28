@@ -133,77 +133,372 @@ $(document).ready(function () {
 <div id="quiz-3-natural-language-processing-ii" class="section level2">
 <h2>Quiz 3: Natural language processing II</h2>
 <p>Data Science Capstone: <a href="https://www.coursera.org/learn/data-science-project/" class="uri">https://www.coursera.org/learn/data-science-project/</a><br />
-Quiz: <a href="https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i" class="uri">https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i</a></p>
-<p>For each of the sentence fragments below use your natural language processing algorithm to predict the next word in the sentence.</p>
+Quiz: <a href="https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i" class="uri">https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i</a><br />
+Refer to this report for statistics: <a href="http://www.modsimworld.org/papers/2015/Natural_Language_Processing.pdf" class="uri">http://www.modsimworld.org/papers/2015/Natural_Language_Processing.pdf</a></p>
+<pre class="r"><code>library(stringr)
+library(tm)
+library(ggplot2)
+library(ngram)
+
+## constants
+# original texts
+co_twitter_en = &quot;../data/capstone/en_US/en_US.twitter.txt&quot;
+co_blogs_en = &quot;../data/capstone/en_US/en_US.blogs.txt&quot;
+co_news_en = &quot;../data/capstone/en_US/en_US.news.txt&quot;
+# cleaned texts
+co_tidy_twitter_en = &quot;../data/capstone/tidy_twitter_en.rds&quot;
+co_tidy_blogs_en = &quot;../data/capstone/tidy_blogs_en.rds&quot;
+co_tidy_news_en = &quot;../data/capstone/tidy_news_en.rds&quot;
+# n-grams
+co_3gram_en = &quot;../data/capstone/3gram_en.rds&quot;
+co_3gram_notail_en = &quot;../data/capstone/3gram_notail_en.rds&quot;</code></pre>
+<pre class="r"><code>tidyText &lt;- function(file, tidyfile) {
+  
+  # read in text
+  con &lt;- file(file, open=&quot;r&quot;)
+  lines &lt;- readLines(con)
+  close(con)
+
+  lines &lt;- tolower(lines)
+  
+  # replace words that contain &quot;@&quot;, &quot;#&quot;, &quot;http://&quot;, &quot;https://&quot; 
+  # with space (especially for Twitter text)
+  lines &lt;- gsub(&quot;([^[:space:]]*)(@|#|http://|https://)([^[:space:]]*)&quot;, &quot; &quot;, lines)
+  
+  # split at all &quot;.&quot;, &quot;,&quot;, brackets and etc.
+  lines &lt;- unlist(strsplit(lines, &quot;[.,:;!?(){}&lt;&gt;]|[][]+&quot;))
+
+  # replace all non-alphanumeric characters with a space at the beginning/end of a word.
+  lines &lt;- gsub(&quot;^[^a-z0-9]+|[^a-z0-9]+$&quot;, &quot; &quot;, lines) # at the begining/end of a line
+  lines &lt;- gsub(&quot;[^a-z0-9]+\\s&quot;, &quot; &quot;, lines) # before space
+  lines &lt;- gsub(&quot;\\s[^a-z0-9]+&quot;, &quot; &quot;, lines) # after space
+  
+  # split a string at spaces then remove the words 
+  # that contain any non-alphabetic characters (excpet &quot;-&quot;, &quot;'&quot;)
+  # then paste them together (separate them with spaces)
+  lines &lt;- unlist(lapply(lines, function(line){
+    words &lt;- unlist(strsplit(line, &quot;\\s+&quot;))
+    words &lt;- words[!grepl(&quot;[^a-z'-]&quot;, words, perl=TRUE)]
+    paste(words, collapse=&quot; &quot;)}))
+  
+  # remove axcess spaces
+  #lines &lt;- gsub(&quot;\\s+&quot;, &quot; &quot;, lines) # remove mutiple spaces
+  lines &lt;- str_trim(lines) # remove spaces at the beginning/end of the line
+
+  # drop blank lines
+  lines &lt;- lines[nchar(lines)&gt;0]
+  
+  saveRDS(lines, file=tidyfile) 
+}
+
+# clean texts
+tidyText(co_twitter_en, co_tidy_twitter_en) # 12.52235 mins, 6,658 KB
+tidyText(co_news_en, co_tidy_news_en) # 45.31975 secs, 70,998 KB
+tidyText(co_blogs_en, co_tidy_blogs_en) # 9.873513 mins, 87,014 KB
+
+# merge texts
+df_news &lt;- readRDS(co_tidy_news_en) # 340061 lines
+df_blogs &lt;- readRDS(co_tidy_blogs_en) # 4532671 lines
+df_twitter &lt;- readRDS(co_tidy_twitter_en) # 5030042 lines
+lines &lt;- c(df_news, df_blogs, df_twitter)
+rm(df_news, df_blogs, df_twitter)
+
+# get 3-grams
+# remove lines that contain less than 3 words, or ngram() would throw errors.
+lines &lt;- lines[str_count(lines, &quot;\\s+&quot;)&gt;1] # reduced 9902774 lines to 7607099 lines
+trigram &lt;- ngram(lines, n=3); rm(lines) # 7.619798 mins
+df &lt;- get.phrasetable(trigram); rm(trigram) # 3.286831 mins
+saveRDS(df, co_3gram_en) # 211,607 KB</code></pre>
+<pre class="r"><code>df &lt;- readRDS(co_3gram_en) # 22662982 objects</code></pre>
+<p>The 3-gram dictionary has a long tail.</p>
+<pre class="r"><code>plot(df[1:5000,]$freq,
+     main='3-Grams Top 5000 Word Frequence',
+     ylab=&quot;Frequence&quot;,
+     xlab=&quot;Word&quot;)</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<pre class="r"><code>rbind(head(df, 10), tail(df, 10))</code></pre>
+<pre><code>##                                ngrams  freq         prop
+## 1                     thanks for the  23773 4.798102e-04
+## 2                         one of the  21097 4.258006e-04
+## 3                           a lot of  19349 3.905207e-04
+## 4                          i want to  14337 2.893635e-04
+## 5                            to be a  13162 2.656485e-04
+## 6                        going to be  12722 2.567680e-04
+## 7                           i have a  11167 2.253835e-04
+## 8                          i have to  10713 2.162204e-04
+## 9                 looking forward to  10554 2.130113e-04
+## 10                          it was a  10284 2.075619e-04
+## 22662973            off canceled for      1 2.018299e-08
+## 22662974        like immigrant blame      1 2.018299e-08
+## 22662975            the six pictures      1 2.018299e-08
+## 22662976       neighbors meeting and      1 2.018299e-08
+## 22662977              just my honest      1 2.018299e-08
+## 22662978                shows on cbs      1 2.018299e-08
+## 22662979         patriots laughed at      1 2.018299e-08
+## 22662980            yourself a green      1 2.018299e-08
+## 22662981               answer to two      1 2.018299e-08
+## 22662982 hype from industry-friendly      1 2.018299e-08</code></pre>
+<p>Remove 3-grams with freqence = 1 (the long tail)</p>
+<pre class="r"><code>df_notail &lt;- df[df$freq&gt;1,]
+saveRDS(df_notail, co_3gram_notail_en) # 32,995 KB</code></pre>
+<pre class="r"><code>df_notail &lt;- readRDS(co_3gram_notail_en)
+dim(df_notail)</code></pre>
+<pre><code>## [1] 4060396       3</code></pre>
+<p>The reduced 3-gram dictionary contains 17.91% original 3-grams, covers 62.45% instances, sizes 15% of the full 3-gram dictionary.</p>
+<pre class="r"><code>c(nrow(df_notail)/nrow(df),
+sum(df_notail$freq)/sum(df$freq),
+32995/211607)</code></pre>
+<pre><code>## [1] 0.1791642 0.6245442 0.1559258</code></pre>
+<p><strong>For each of the sentence fragments below use your natural language processing algorithm to predict the next word in the sentence.</strong></p>
 <div id="when-you-breathe-i-want-to-be-the-air-for-you.-ill-be-there-for-you-id-live-and-id" class="section level3">
 <h3>1. When you breathe, I want to be the air for you. I’ll be there for you, I’d live and I’d</h3>
-<p>give<br />
+<p><strong>give (wrong)</strong><br />
 sleep<br />
 eat<br />
-die</p>
+die (right)</p>
+<pre class="r"><code>rbind(df[grep(&quot;^and i'd give&quot;, df[,1]),],
+      df[grep(&quot;^and i'd sleep&quot;, df[,1]),],
+      df[grep(&quot;^and i'd eat&quot;, df[,1]),],
+      df[grep(&quot;^and i'd die&quot;, df[,1]),])</code></pre>
+<pre><code>##                  ngrams freq         prop
+## 637961    and i'd give     7 1.412809e-07
+## 17385622 and i'd given     1 2.018299e-08
+## 11506360   and i'd eat     1 2.018299e-08</code></pre>
+<pre class="r"><code>rbind(df_notail[grep(&quot;^and i'd give&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^and i'd sleep&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^and i'd eat&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^and i'd die&quot;, df_notail[,1]),])</code></pre>
+<pre><code>##               ngrams freq         prop
+## 637961 and i'd give     7 1.412809e-07</code></pre>
 </div>
 <div id="guy-at-my-tables-wife-got-up-to-go-to-the-bathroom-and-i-asked-about-dessert-and-he-started-telling-me-about-his" class="section level3">
 <h3>2. Guy at my table’s wife got up to go to the bathroom and I asked about dessert and he started telling me about his</h3>
 <p>horticultural<br />
-spiritual<br />
-marital<br />
+<strong>spiritual (wrong)</strong><br />
+marital (right)<br />
 financial</p>
+<pre class="r"><code>rbind(df[grep(&quot;^about his horticultural&quot;, df[,1]),],
+      df[grep(&quot;^about his spiritual&quot;, df[,1]),],
+      df[grep(&quot;^about his marital&quot;, df[,1]),],
+      df[grep(&quot;^about his financial&quot;, df[,1]),])</code></pre>
+<pre><code>##                        ngrams freq         prop
+## 14865805 about his spiritual     1 2.018299e-08</code></pre>
+<pre class="r"><code>rbind(df_notail[grep(&quot;^about his horticultural&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^about his spiritual&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^about his marital&quot;, df_notail[,1]),],
+      df_notail[grep(&quot;^about his financial&quot;, df_notail[,1]),])</code></pre>
+<pre><code>## [1] ngrams freq   prop  
+## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
 </div>
 <div id="id-give-anything-to-see-arctic-monkeys-this" class="section level3">
 <h3>3. I’d give anything to see arctic monkeys this</h3>
-<p>weekend<br />
+<p><strong>weekend</strong><br />
 month<br />
 decade<br />
 morning</p>
+<pre class="r"><code>head(df[grep(&quot;^monkeys this&quot;, df[,1]),], 10)</code></pre>
+<pre><code>## [1] ngrams freq   prop  
+## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
+<pre class="r"><code>head(df[grep(&quot;^arctic monkeys&quot;, df[,1]),], 10)</code></pre>
+<pre><code>##                           ngrams freq         prop
+## 2229165     arctic monkeys with     2 4.036598e-08
+## 3266611      arctic monkeys and     2 4.036598e-08
+## 5066428  arctic monkeys opening     1 2.018299e-08
+## 6107215     arctic monkeys last     1 2.018299e-08
+## 6456208    arctic monkeys opens     1 2.018299e-08
+## 6754268  arctic monkeys tonight     1 2.018299e-08
+## 7919258       arctic monkeys my     1 2.018299e-08
+## 8915715   arctic monkeys humbug     1 2.018299e-08
+## 9984819  arctic monkeys classic     1 2.018299e-08
+## 12425907     arctic monkeys idk     1 2.018299e-08</code></pre>
+<pre class="r"><code>rbind(head(df[grep(&quot;this weekend&quot;, df[,1]),], 1),
+      head(df[grep(&quot;this month&quot;, df[,1]),], 1),
+      head(df[grep(&quot;this decade&quot;, df[,1]),], 1),
+      head(df[grep(&quot;this morning&quot;, df[,1]),], 1))</code></pre>
+<pre><code>##                     ngrams freq         prop
+## 6276     for this weekend   336 6.781485e-06
+## 12333  earlier this month   205 4.137513e-06
+## 511919     of this decade     9 1.816469e-07
+## 3123     this morning and   554 1.118138e-05</code></pre>
+<pre class="r"><code>rbind(head(df_notail[grep(&quot;this weekend&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;this month&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;this decade&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;this morning&quot;, df_notail[,1]),], 1))</code></pre>
+<pre><code>##                     ngrams freq         prop
+## 6276     for this weekend   336 6.781485e-06
+## 12333  earlier this month   205 4.137513e-06
+## 511919     of this decade     9 1.816469e-07
+## 3123     this morning and   554 1.118138e-05</code></pre>
 </div>
 <div id="talking-to-your-mom-has-the-same-effect-as-a-hug-and-helps-reduce-your" class="section level3">
 <h3>4. Talking to your mom has the same effect as a hug and helps reduce your</h3>
 <p>hunger<br />
-stress<br />
+<strong>stress</strong><br />
 happiness<br />
 sleepiness</p>
+<pre class="r"><code>head(df[grep(&quot;^reduce your&quot;, df[,1]),], 5)</code></pre>
+<pre><code>##                        ngrams freq         prop
+## 274618      reduce your risk    15 3.027449e-07
+## 1100192   reduce your stress     4 8.073196e-08
+## 1376907    reduce your costs     4 8.073196e-08
+## 1523574     reduce your debt     3 6.054897e-08
+## 1561405 reduce your exposure     3 6.054897e-08</code></pre>
+<pre class="r"><code>rbind(head(df[grep(&quot;^reduce your hunger&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^reduce your stress&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^reduce your happiness&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^reduce your sleepiness&quot;, df[,1]),], 1))</code></pre>
+<pre><code>##                      ngrams freq         prop
+## 1100192 reduce your stress     4 8.073196e-08</code></pre>
+<pre class="r"><code>rbind(head(df_notail[grep(&quot;^reduce your hunger&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^reduce your stress&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^reduce your happiness&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^reduce your sleepiness&quot;, df_notail[,1]),], 1))</code></pre>
+<pre><code>##                      ngrams freq         prop
+## 1100192 reduce your stress     4 8.073196e-08</code></pre>
 </div>
 <div id="when-you-were-in-holland-you-were-like-1-inch-away-from-me-but-you-hadnt-time-to-take-a" class="section level3">
 <h3>5. When you were in Holland you were like 1 inch away from me but you hadn’t time to take a</h3>
-<p>look<br />
-picture<br />
+<p><strong>look (wrong)</strong><br />
+picture (right)<br />
 walk<br />
 minute</p>
+<pre class="r"><code>head(df[grep(&quot;^take a &quot;, df[,1]),], 5)</code></pre>
+<pre><code>##               ngrams freq         prop
+## 879     take a look  1227 2.476453e-05
+## 3893 take a picture   474 9.566738e-06
+## 4172     take a nap   450 9.082346e-06
+## 5001   take a break   395 7.972281e-06
+## 6254  take a moment   337 6.801668e-06</code></pre>
+<pre class="r"><code>head(df_notail[grep(&quot;^take a &quot;, df_notail[,1]),], 5)</code></pre>
+<pre><code>##               ngrams freq         prop
+## 879     take a look  1227 2.476453e-05
+## 3893 take a picture   474 9.566738e-06
+## 4172     take a nap   450 9.082346e-06
+## 5001   take a break   395 7.972281e-06
+## 6254  take a moment   337 6.801668e-06</code></pre>
 </div>
 <div id="id-just-like-all-of-these-questions-answered-a-presentation-of-evidence-and-a-jury-to-settle-the" class="section level3">
 <h3>6. I’d just like all of these questions answered, a presentation of evidence, and a jury to settle the</h3>
 <p>incident<br />
 account<br />
-matter<br />
-case</p>
+matter (right)<br />
+<strong>case (wrong)</strong></p>
+<pre class="r"><code>head(df[grep(&quot;^settle the &quot;, df[,1]),], 5)</code></pre>
+<pre><code>##                     ngrams freq         prop
+## 908372    settle the bill     5 1.009150e-07
+## 910045   settle the score     5 1.009150e-07
+## 943200    settle the case     5 1.009150e-07
+## 1282749 settle the matter     4 8.073196e-08
+## 1326203  settle the issue     4 8.073196e-08</code></pre>
+<pre class="r"><code>head(df_notail[grep(&quot;^settle the &quot;, df_notail[,1]),], 5)</code></pre>
+<pre><code>##                     ngrams freq         prop
+## 908372    settle the bill     5 1.009150e-07
+## 910045   settle the score     5 1.009150e-07
+## 943200    settle the case     5 1.009150e-07
+## 1282749 settle the matter     4 8.073196e-08
+## 1326203  settle the issue     4 8.073196e-08</code></pre>
 </div>
 <div id="i-cant-deal-with-unsymetrical-things.-i-cant-even-hold-an-uneven-number-of-bags-of-groceries-in-each" class="section level3">
 <h3>7. I can’t deal with unsymetrical things. I can’t even hold an uneven number of bags of groceries in each</h3>
 <p>finger<br />
 arm<br />
 toe<br />
-hand</p>
+<strong>hand</strong></p>
+<pre class="r"><code>rbind(head(df[grep(&quot;^in each finger&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^in each arm&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^in each toe&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^in each hand&quot;, df[,1]),], 1))</code></pre>
+<pre><code>##                ngrams freq         prop
+## 1237294 in each arms     4 8.073196e-08
+## 231077  in each hand    18 3.632938e-07</code></pre>
+<pre class="r"><code>rbind(head(df_notail[grep(&quot;^in each finger&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^in each arm&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^in each toe&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^in each hand&quot;, df_notail[,1]),], 1))</code></pre>
+<pre><code>##                ngrams freq         prop
+## 1237294 in each arms     4 8.073196e-08
+## 231077  in each hand    18 3.632938e-07</code></pre>
 </div>
 <div id="every-inch-of-you-is-perfect-from-the-bottom-to-the" class="section level3">
 <h3>8. Every inch of you is perfect from the bottom to the</h3>
 <p>side<br />
 center<br />
-top<br />
+<strong>top</strong><br />
 middle</p>
+<pre class="r"><code>rbind(head(df[grep(&quot;^to the side&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^to the center&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^to the top&quot;, df[,1]),], 1),
+      head(df[grep(&quot;^to the middle&quot;, df[,1]),], 1))</code></pre>
+<pre><code>##               ngrams freq         prop
+## 5463    to the side   370 7.467707e-06
+## 19215 to the center   146 2.946717e-06
+## 1396     to the top   944 1.905274e-05
+## 20898 to the middle   137 2.765070e-06</code></pre>
+<pre class="r"><code>rbind(head(df_notail[grep(&quot;^to the side&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^to the center&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^to the top&quot;, df_notail[,1]),], 1),
+      head(df_notail[grep(&quot;^to the middle&quot;, df_notail[,1]),], 1))</code></pre>
+<pre><code>##               ngrams freq         prop
+## 5463    to the side   370 7.467707e-06
+## 19215 to the center   146 2.946717e-06
+## 1396     to the top   944 1.905274e-05
+## 20898 to the middle   137 2.765070e-06</code></pre>
 </div>
 <div id="im-thankful-my-childhood-was-filled-with-imagination-and-bruises-from-playing" class="section level3">
 <h3>9. I’m thankful my childhood was filled with imagination and bruises from playing</h3>
 <p>inside<br />
 daily<br />
 weekly<br />
-outside</p>
+<strong>outside</strong></p>
+<pre class="r"><code>head(df[grep(&quot;^from playing&quot;, df[,1]),], 10)</code></pre>
+<pre><code>##                           ngrams freq         prop
+## 288872         from playing the    15 3.027449e-07
+## 657602        from playing with     7 1.412809e-07
+## 1059558 from playing basketball     5 1.009150e-07
+## 1539602         from playing at     3 6.054897e-08
+## 1545579         from playing so     3 6.054897e-08
+## 1814394    from playing outside     3 6.054897e-08
+## 1908553         from playing in     3 6.054897e-08
+## 1947543         from playing on     3 6.054897e-08
+## 2013344          from playing a     3 6.054897e-08
+## 2406696         from playing my     2 4.036598e-08</code></pre>
+<pre class="r"><code>head(df_notail[grep(&quot;^from playing&quot;, df_notail[,1]),], 10)</code></pre>
+<pre><code>##                           ngrams freq         prop
+## 288872         from playing the    15 3.027449e-07
+## 657602        from playing with     7 1.412809e-07
+## 1059558 from playing basketball     5 1.009150e-07
+## 1539602         from playing at     3 6.054897e-08
+## 1545579         from playing so     3 6.054897e-08
+## 1814394    from playing outside     3 6.054897e-08
+## 1908553         from playing in     3 6.054897e-08
+## 1947543         from playing on     3 6.054897e-08
+## 2013344          from playing a     3 6.054897e-08
+## 2406696         from playing my     2 4.036598e-08</code></pre>
 </div>
 <div id="i-like-how-the-same-people-are-in-almost-all-of-adam-sandlers" class="section level3">
 <h3>10. I like how the same people are in almost all of Adam Sandler’s</h3>
 <p>stories<br />
-movies<br />
+<strong>movies</strong><br />
 pictures<br />
 novels</p>
+<pre class="r"><code>head(df[grep(&quot;^adam sandler's &quot;, df[,1]),], 5)</code></pre>
+<pre><code>##                             ngrams freq         prop
+## 10343550   adam sandler's grandma     1 2.018299e-08
+## 11814967  adam sandler's thoughts     1 2.018299e-08
+## 11854765      adam sandler's jack     1 2.018299e-08
+## 15764079    adam sandler's recent     1 2.018299e-08
+## 17803430 adam sandler's lunchlady     1 2.018299e-08</code></pre>
+<pre class="r"><code>df[grep(&quot;adam sandler's&quot;, df[,1]),]</code></pre>
+<pre><code>##                             ngrams freq         prop
+## 5354146        was adam sandler's     1 2.018299e-08
+## 10343550   adam sandler's grandma     1 2.018299e-08
+## 11463702  watching adam sandler's     1 2.018299e-08
+## 11814967  adam sandler's thoughts     1 2.018299e-08
+## 11854765      adam sandler's jack     1 2.018299e-08
+## 15764079    adam sandler's recent     1 2.018299e-08
+## 15770108        at adam sandler's     1 2.018299e-08
+## 17803430 adam sandler's lunchlady     1 2.018299e-08
+## 21905373     loved adam sandler's     1 2.018299e-08</code></pre>
 </div>
 </div>
 

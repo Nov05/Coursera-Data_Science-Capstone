@@ -14,77 +14,286 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Quiz 3: Natural language processing II
 
 Data Science Capstone: https://www.coursera.org/learn/data-science-project/  
-Quiz: https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i
+Quiz: https://www.coursera.org/learn/data-science-project/exam/QbBvW/quiz-2-natural-language-processing-i  
+Refer to this report for statistics: http://www.modsimworld.org/papers/2015/Natural_Language_Processing.pdf
 
-For each of the sentence fragments below use your natural language processing algorithm to predict the next word in the sentence.
+```{r warning=FALSE, message=FALSE}
+library(stringr)
+library(tm)
+library(ggplot2)
+library(ngram)
+
+## constants
+# original texts
+co_twitter_en = "../data/capstone/en_US/en_US.twitter.txt"
+co_blogs_en = "../data/capstone/en_US/en_US.blogs.txt"
+co_news_en = "../data/capstone/en_US/en_US.news.txt"
+# cleaned texts
+co_tidy_twitter_en = "../data/capstone/tidy_twitter_en.rds"
+co_tidy_blogs_en = "../data/capstone/tidy_blogs_en.rds"
+co_tidy_news_en = "../data/capstone/tidy_news_en.rds"
+# n-grams
+co_3gram_en = "../data/capstone/3gram_en.rds"
+co_3gram_notail_en = "../data/capstone/3gram_notail_en.rds"
+```
+
+```{r eval=FALSE}
+tidyText <- function(file, tidyfile) {
+  
+  # read in text
+  con <- file(file, open="r")
+  lines <- readLines(con)
+  close(con)
+
+  lines <- tolower(lines)
+  
+  # replace words that contain "@", "#", "http://", "https://" 
+  # with space (especially for Twitter text)
+  lines <- gsub("([^[:space:]]*)(@|#|http://|https://)([^[:space:]]*)", " ", lines)
+  
+  # split at all ".", ",", brackets and etc.
+  lines <- unlist(strsplit(lines, "[.,:;!?(){}<>]|[][]+"))
+
+  # replace all non-alphanumeric characters with a space at the beginning/end of a word.
+  lines <- gsub("^[^a-z0-9]+|[^a-z0-9]+$", " ", lines) # at the begining/end of a line
+  lines <- gsub("[^a-z0-9]+\\s", " ", lines) # before space
+  lines <- gsub("\\s[^a-z0-9]+", " ", lines) # after space
+  
+  # split a string at spaces then remove the words 
+  # that contain any non-alphabetic characters (excpet "-", "'")
+  # then paste them together (separate them with spaces)
+  lines <- unlist(lapply(lines, function(line){
+    words <- unlist(strsplit(line, "\\s+"))
+    words <- words[!grepl("[^a-z'-]", words, perl=TRUE)]
+    paste(words, collapse=" ")}))
+  
+  # remove axcess spaces
+  #lines <- gsub("\\s+", " ", lines) # remove mutiple spaces
+  lines <- str_trim(lines) # remove spaces at the beginning/end of the line
+
+  # drop blank lines
+  lines <- lines[nchar(lines)>0]
+  
+  saveRDS(lines, file=tidyfile) 
+}
+
+# clean texts
+tidyText(co_twitter_en, co_tidy_twitter_en) # 12.52235 mins, 6,658 KB
+tidyText(co_news_en, co_tidy_news_en) # 45.31975 secs, 70,998 KB
+tidyText(co_blogs_en, co_tidy_blogs_en) # 9.873513 mins, 87,014 KB
+
+# merge texts
+df_news <- readRDS(co_tidy_news_en) # 340061 lines
+df_blogs <- readRDS(co_tidy_blogs_en) # 4532671 lines
+df_twitter <- readRDS(co_tidy_twitter_en) # 5030042 lines
+lines <- c(df_news, df_blogs, df_twitter)
+rm(df_news, df_blogs, df_twitter)
+
+# get 3-grams
+# remove lines that contain less than 3 words, or ngram() would throw errors.
+lines <- lines[str_count(lines, "\\s+")>1] # reduced 9902774 lines to 7607099 lines
+trigram <- ngram(lines, n=3); rm(lines) # 7.619798 mins
+df <- get.phrasetable(trigram); rm(trigram) # 3.286831 mins
+saveRDS(df, co_3gram_en) # 211,607 KB
+```
+
+```{r}
+df <- readRDS(co_3gram_en) # 22662982 objects
+```
+
+The 3-gram dictionary has a long tail.
+
+```{r}
+plot(df[1:5000,]$freq,
+     main='3-Grams Top 5000 Word Frequence',
+     ylab="Frequence",
+     xlab="Word")
+```
+
+```{r}
+rbind(head(df, 10), tail(df, 10))
+```
+
+Remove 3-grams with freqence = 1 (the long tail)
+
+```{r eval=FALSE}
+df_notail <- df[df$freq>1,]
+saveRDS(df_notail, co_3gram_notail_en) # 32,995 KB
+```
+
+```{r}
+df_notail <- readRDS(co_3gram_notail_en)
+dim(df_notail)
+```
+
+The reduced 3-gram dictionary contains 17.91% original 3-grams, covers 62.45% instances, sizes 15% of the full 3-gram dictionary.
+
+```{r}
+c(nrow(df_notail)/nrow(df),
+sum(df_notail$freq)/sum(df$freq),
+32995/211607)
+```
+
+**For each of the sentence fragments below use your natural language processing algorithm to predict the next word in the sentence.**
 
 ### 1. When you breathe, I want to be the air for you. I'll be there for you, I'd live and I'd
 
-give  
+**give (wrong)**  
 sleep  
 eat  
-die
+die (right)
+
+```{r}
+rbind(df[grep("^and i'd give", df[,1]),],
+      df[grep("^and i'd sleep", df[,1]),],
+      df[grep("^and i'd eat", df[,1]),],
+      df[grep("^and i'd die", df[,1]),])
+rbind(df_notail[grep("^and i'd give", df_notail[,1]),],
+      df_notail[grep("^and i'd sleep", df_notail[,1]),],
+      df_notail[grep("^and i'd eat", df_notail[,1]),],
+      df_notail[grep("^and i'd die", df_notail[,1]),])
+```
 
 ### 2. Guy at my table's wife got up to go to the bathroom and I asked about dessert and he started telling me about his
 
 horticultural  
-spiritual  
-marital  
+**spiritual (wrong)**  
+marital (right)  
 financial  
+
+```{r}
+rbind(df[grep("^about his horticultural", df[,1]),],
+      df[grep("^about his spiritual", df[,1]),],
+      df[grep("^about his marital", df[,1]),],
+      df[grep("^about his financial", df[,1]),])
+rbind(df_notail[grep("^about his horticultural", df_notail[,1]),],
+      df_notail[grep("^about his spiritual", df_notail[,1]),],
+      df_notail[grep("^about his marital", df_notail[,1]),],
+      df_notail[grep("^about his financial", df_notail[,1]),])
+```
+
 
 ### 3. I'd give anything to see arctic monkeys this
 
-weekend  
+**weekend**  
 month  
 decade  
 morning  
 
+```{r}
+head(df[grep("^monkeys this", df[,1]),], 10)
+head(df[grep("^arctic monkeys", df[,1]),], 10)
+rbind(head(df[grep("this weekend", df[,1]),], 1),
+      head(df[grep("this month", df[,1]),], 1),
+      head(df[grep("this decade", df[,1]),], 1),
+      head(df[grep("this morning", df[,1]),], 1))
+rbind(head(df_notail[grep("this weekend", df_notail[,1]),], 1),
+      head(df_notail[grep("this month", df_notail[,1]),], 1),
+      head(df_notail[grep("this decade", df_notail[,1]),], 1),
+      head(df_notail[grep("this morning", df_notail[,1]),], 1))
+```
+
 ### 4. Talking to your mom has the same effect as a hug and helps reduce your
 
 hunger  
-stress  
+**stress**  
 happiness  
 sleepiness  
 
+```{r}
+head(df[grep("^reduce your", df[,1]),], 5)
+rbind(head(df[grep("^reduce your hunger", df[,1]),], 1),
+      head(df[grep("^reduce your stress", df[,1]),], 1),
+      head(df[grep("^reduce your happiness", df[,1]),], 1),
+      head(df[grep("^reduce your sleepiness", df[,1]),], 1))
+rbind(head(df_notail[grep("^reduce your hunger", df_notail[,1]),], 1),
+      head(df_notail[grep("^reduce your stress", df_notail[,1]),], 1),
+      head(df_notail[grep("^reduce your happiness", df_notail[,1]),], 1),
+      head(df_notail[grep("^reduce your sleepiness", df_notail[,1]),], 1))
+```
+
 ### 5. When you were in Holland you were like 1 inch away from me but you hadn't time to take a
 
-look  
-picture  
+**look (wrong)**  
+picture (right)  
 walk  
 minute  
+
+```{r}
+head(df[grep("^take a ", df[,1]),], 5)
+head(df_notail[grep("^take a ", df_notail[,1]),], 5)
+```
 
 ### 6. I'd just like all of these questions answered, a presentation of evidence, and a jury to settle the
 
 incident  
 account  
-matter  
-case
+matter (right)  
+**case (wrong)**
+
+```{r}
+head(df[grep("^settle the ", df[,1]),], 5)
+head(df_notail[grep("^settle the ", df_notail[,1]),], 5)
+```
+
 
 ### 7. I can't deal with unsymetrical things. I can't even hold an uneven number of bags of groceries in each
 
 finger  
 arm  
 toe  
-hand  
+**hand**  
+
+```{r}
+rbind(head(df[grep("^in each finger", df[,1]),], 1),
+      head(df[grep("^in each arm", df[,1]),], 1),
+      head(df[grep("^in each toe", df[,1]),], 1),
+      head(df[grep("^in each hand", df[,1]),], 1))
+rbind(head(df_notail[grep("^in each finger", df_notail[,1]),], 1),
+      head(df_notail[grep("^in each arm", df_notail[,1]),], 1),
+      head(df_notail[grep("^in each toe", df_notail[,1]),], 1),
+      head(df_notail[grep("^in each hand", df_notail[,1]),], 1))
+```
 
 ### 8. Every inch of you is perfect from the bottom to the
 
 side  
 center  
-top  
+**top**  
 middle  
+
+```{r}
+rbind(head(df[grep("^to the side", df[,1]),], 1),
+      head(df[grep("^to the center", df[,1]),], 1),
+      head(df[grep("^to the top", df[,1]),], 1),
+      head(df[grep("^to the middle", df[,1]),], 1))
+rbind(head(df_notail[grep("^to the side", df_notail[,1]),], 1),
+      head(df_notail[grep("^to the center", df_notail[,1]),], 1),
+      head(df_notail[grep("^to the top", df_notail[,1]),], 1),
+      head(df_notail[grep("^to the middle", df_notail[,1]),], 1))
+```
 
 ### 9. I’m thankful my childhood was filled with imagination and bruises from playing
 
 inside  
 daily  
 weekly  
-outside  
+**outside**  
+
+```{r}
+head(df[grep("^from playing", df[,1]),], 10)
+head(df_notail[grep("^from playing", df_notail[,1]),], 10)
+```
 
 ### 10. I like how the same people are in almost all of Adam Sandler's
 
 stories  
-movies  
+**movies**  
 pictures  
-novels  
+novels 
+
+```{r}
+head(df[grep("^adam sandler's ", df[,1]),], 5)
+df[grep("adam sandler's", df[,1]),]
+```
 

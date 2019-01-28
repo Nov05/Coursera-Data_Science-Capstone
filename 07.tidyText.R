@@ -37,7 +37,8 @@ tidyText <- function(file, tidyfile) {
   lines <- gsub("^[^a-z0-9]+|[^a-z0-9]+$", " ", lines) # at the begining/end of a line
   lines <- gsub("[^a-z0-9]+\\s", " ", lines) # before space
   lines <- gsub("\\s[^a-z0-9]+", " ", lines) # after space
-  lines <- gsub("\\s+", " ", lines) # remove mutiple spaces
+  
+  lines <- gsub("\\s+", " ", lines) # remove excess spaces
   lines <- str_trim(lines) # remove spaces at the beginning/end of the line
   
   saveRDS(lines, file=tidyfile) 
