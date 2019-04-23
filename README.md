@@ -55,8 +55,8 @@
 * Course - https://www.coursera.org/learn/data-science-project/home/week/7
 
 * Peer-graded Assignment: Final Project - https://www.coursera.org/learn/data-science-project/peer/EI1l4/final-project-submission  
-  Github - https://github.com/Nov05/Shiny-Text_Input_Prediction  
-  App - https://wenjing.shinyapps.io/app-text-input/
+  App V1 - https://github.com/Nov05/Shiny-Text_Input_Prediction  
+  App V2 - 
 
 
 
