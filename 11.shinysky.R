@@ -1,6 +1,12 @@
 
 # https://stackoverflow.com/questions/35265920/auto-complete-and-selection-of-multiple-values-in-text-box-shiny
 
+
+#if (require(devtools)) install.packages("devtools")#if not already installed
+#devtools::install_github("AnalytixWare/ShinySky")
+#library(shinysky)
+#shinysky::run.shinysky.example()
+
 library(shiny)
 library(shinysky)
 
