@@ -1,4 +1,4 @@
-2019-04-23_capstone
+Coursera Data Science Capstone
 ========================================================
 author: Wenjing Liu
 date: 2019-04-23
@@ -7,26 +7,98 @@ autosize: true
 1. Data Cleanse
 ========================================================
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+- Covert all letters to lower-case;
+- Remove strings with "http://", "https://", begin with @, etc;
+- Replace all non alphanumeric letters with space;
+- Remove excessive spaces;
+- Split text at space to get 1-gram dictionary.
+
+Or we could use libraries to tokenize the text (omitting stopwords). For twitter text we could use function tokenize_tweets().
+
+```{r eval=FALSE}
+library(tokenizers)
+library(stopwords)
+tokenize_words(<text>, stopwords=stopwords::stopwords("en"))
+```
+
+For More info: https://cran.r-project.org/web/packages/tokenizers/vignettes/introduction-to-tokenizers.html
 
 2. N-gram Dictionary
 ========================================================
 
-```{r}
-summary(cars)
+Get 2-grams and 3-grams (with stopwords).
+
+```{r eval=FALSE}
+tokenize_ngrams(<text>, n_min=2, n=3)
 ```
 
-3. Shiny UI
+To reduce the N-gram dictionary size, first calculate frequency for each N-gram, then abandon the least frequent ones (the long tail), say the ones only cover 10% of occurrences or the ones that only appear once in the text corpus. 
+
+E.g. The total count of 1-gram is around 540,000. We would only need 6,000 words to cover 90% of the occurrences. 
+
+3. Exploratory Analysis
 ========================================================
 
-```{r, echo=FALSE}
-plot(cars)
+Use Twitter text as an example.
+
+```{r echo=FALSE, fig.width=10,fig.height=4.5,dpi=300}
+
+par(mfrow=c(1,2))
+df <- readRDS("d:/r/data/capstone/1gram_en.rds")
+plot(df[1:500,]$freq,
+      main='Twitter Top 500 Word Frequence',
+      ylab="Frequence",
+      xlab="Word")
+
+library(ggplot2)
+df <- readRDS("d:/r/data/capstone/tidy_v1/1gram_twitter_en.rds") # with stop words
+df$count <- 1
+df$count <- cumsum(df$count)
+df$coverage <- cumsum(df$freq) / sum(df$freq) * 100
+df <- df[df$coverage <= 91,]
+
+# find the word counts for 50% and 90% coverage 
+points <- rbind(tail(df[df$coverage <= 50,], 1), tail(df[df$coverage <= 90,], 1))
+
+p <- ggplot(data=df, aes(x=count, y=coverage, group=1)) +
+     geom_line()+
+     geom_point(data=points, colour="red", size=3) +
+     geom_text(data=points, aes(label=count), hjust=-1, vjust=1) +
+     ggtitle("Number of Words to Cover Twitter Text (with Stop Words)") +
+     xlab("Number of Words") +
+     ylab("Coverage Percentage")
+
+library(grid)
+# create an apporpriate viewport.  Modify the dimensions and coordinates as needed
+vp <- viewport(height=unit(1, "npc"), width=unit(0.5, "npc"), 
+               just=c("left","top"), 
+               x=0.45, y=1)
+print(p, vp=vp)
 ```
 
-4. Outcome
+4. Shiny UI
 ========================================================
+
+The Shiny app uses no-tail 3-gram dictionary (ommiting 3-grams that appears only once in the text corpus). It will match the last two words of an text input with the first two words of entries in the dictionary, to predict the third word. If no entries found, it will try to match the last word of the input only. If no entries found again, it will return the most frequent 3-grams as result.
+
+You can launch the app:
+
+- online by visiting https://wenjing.shinyapps.io/app-text-input-v2/;
+- or locally by running the following code in your RStudio.
+
+```{r eval=FALSE}
+library(shiny); runGitHub( "Shiny-Text_Input_Prediction-V2", "Nov05")
+```
 
 5. Statictics
 ========================================================
+
+There are around 54,000 1-grams (different words) in total. And the no-tail 3-gram dictionary has about 4,060,000 entries, the count of unique first word of 3-grams is around 540,000. 
+
+- Hence 53766/537782 = 10% words of the text corpus is covered.
+
+The sum of the 1-gram occurencies is 68064165. The sum of that covered by the 3-gram first words is .
+
+- Hence /68064165 = word occurencies is covered.
+
+
