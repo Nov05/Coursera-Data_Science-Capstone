@@ -79,15 +79,16 @@ print(p, vp=vp)
 4. Shiny UI
 ========================================================
 
-The Shiny app uses no-tail 3-gram dictionary (ommiting 3-grams that appears only once in the text corpus). It will match the last two words of an text input with the first two words of entries in the dictionary, to predict the third word. If no entries found, it will try to match the last word of the input only. If no entries found again, it will return the most frequent 3-grams as result.
+The Shiny app uses 3-gram dictionary (ommiting 3-grams that appears only once in the text corpus). It will match the last two words of an input with the first two words of entries in the dictionary, to predict the third word. If no entries found, it will instead match the last word of the input only. If no entries found again, it will return the most frequent 3-grams as result.
 
 You can launch the app:
 
-- online by visiting https://wenjing.shinyapps.io/app-text-input-v2/;
-- or locally by running the following code in your RStudio.
+- online https://wenjing.shinyapps.io/app-text-input-v2/
+- or locally by running the following code in your RStudio
 
 ```{r eval=FALSE}
-library(shiny); runGitHub( "Shiny-Text_Input_Prediction-V2", "Nov05")
+library(shiny)
+runGitHub("Shiny-Text_Input_Prediction-V2", "Nov05")
 ```
 
 5. Statictics
@@ -95,10 +96,16 @@ library(shiny); runGitHub( "Shiny-Text_Input_Prediction-V2", "Nov05")
 
 There are around 54,000 1-grams (different words) in total. And the no-tail 3-gram dictionary has about 4,060,000 entries, the count of unique first word of 3-grams is around 540,000. 
 
-- Hence 53766/537782 = 10% words of the text corpus is covered.
+- Hence 53766/537782 = 10% words of the text corpus are covered.
 
 The sum of the 1-gram occurencies is 68064165. The sum of that covered by the 3-gram first words is .
 
-- Hence /68064165 = word occurencies is covered.
+- Hence 66520911/68064165 = 97.73% word occurencies are covered.  
+
+========================================================
+
+<br \><br \><br \><br \>
+
+## Thank you for reviewing my capstone project!
 
 

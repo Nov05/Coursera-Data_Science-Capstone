@@ -16,10 +16,12 @@ firstwords <- unlist(firstwords); firstwords
 
 # Apply function to 3-gram
 firstwords <- lapply(df$ngrams, f)
-firstwords <- unlist(firstwords); head(firstwords, 10)
+firstwords <- unlist(firstwords) # 4,060,396 rows
+head(firstwords, 10)
 
 # count unique values
-length(unique(firstwords)) # 53766
+firstwords <- unique(firstwords)
+length(firstwords) # 53766
 
 53766/537782 # 0.09997731
 
@@ -32,5 +34,7 @@ freqs <- lapply(firstwords, function(word){
 })
 freqs <- unlist(freqs)
 head(freqs)
-sum(freqs)
+sum(freqs) #66520911
+
+66520911/68064165 # [1] 0.9773265
 
