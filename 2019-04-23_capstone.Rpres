@@ -46,7 +46,7 @@ Use Twitter text as an example.
 par(mfrow=c(1,2))
 df <- readRDS("d:/r/data/capstone/1gram_en.rds")
 plot(df[1:500,]$freq,
-      main='Twitter Top 500 Word Frequence',
+      main='Twitter Top 500 Word Frequency',
       ylab="Frequence",
       xlab="Word")
 
@@ -64,9 +64,10 @@ p <- ggplot(data=df, aes(x=count, y=coverage, group=1)) +
      geom_line()+
      geom_point(data=points, colour="red", size=3) +
      geom_text(data=points, aes(label=count), hjust=-1, vjust=1) +
-     ggtitle("Number of Words to Cover Twitter Text (with Stop Words)") +
-     xlab("Number of Words") +
-     ylab("Coverage Percentage")
+     ggtitle("Number of Different Words\nto Cover Twitter Text\n(with Stop Words)") +
+     xlab("Number of Different Words") +
+     ylab("Coverage Percentage") +
+     theme(plot.title = element_text(hjust=0.5))
 
 library(grid)
 # create an apporpriate viewport.  Modify the dimensions and coordinates as needed
