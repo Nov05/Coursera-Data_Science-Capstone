@@ -1,5 +1,7 @@
 # Coursera Data Science Capstone
 
+Go to course: https://www.coursera.org/learn/data-science-project
+
 ### Week 1
 
 * Course - https://www.coursera.org/learn/data-science-project/home/week/1
