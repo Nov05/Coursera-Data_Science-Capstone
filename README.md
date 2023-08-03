@@ -1,20 +1,8 @@
-[<img src="https://raw.githubusercontent.com/Nov05/pictures/master/certificates/Coursera%20C34Q62KBDQLY.jpg" width=800>](https://www.coursera.org/account/accomplishments/specialization/C34Q62KBDQLY)  
-
 # Coursera Data Science Capstone
 
-Go to course: https://www.coursera.org/learn/data-science-project  
+Go to the course: https://www.coursera.org/learn/data-science-project  
 
-**Course Certificates Completed**
-* Data Science Capstone
-* Reproducible Research
-* Developing Data Products
-* Exploratory Data Analysis
-* R Programming
-* Regression Models
-* Statistical Inference
-* Getting and Cleaning Data
-* Practical Machine Learning
-* The Data Scientist’s Toolbox
+[<img src="https://raw.githubusercontent.com/Nov05/pictures/master/certificates/Coursera%20C34Q62KBDQLY.jpg" width=800>](https://www.coursera.org/account/accomplishments/specialization/C34Q62KBDQLY)  
 
 ### Week 1
 
