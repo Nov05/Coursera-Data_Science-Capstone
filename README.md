@@ -1,7 +1,8 @@
 # Coursera Data Science Capstone
 
-Go to the course: https://www.coursera.org/learn/data-science-project  
-Approximately 7 months at 10 hours a week to complete  
+👉 Go to the course: https://www.coursera.org/learn/data-science-project  
+👉 Go the specialization: https://www.coursera.org/specializations/jhu-data-science  
+ Approximately 7 months at 10 hours a week to complete  
 
 [<img src="https://raw.githubusercontent.com/Nov05/pictures/master/certificates/Coursera%20C34Q62KBDQLY.jpg" width=800>](https://www.coursera.org/account/accomplishments/specialization/C34Q62KBDQLY)  
 
